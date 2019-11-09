@@ -7,25 +7,33 @@ const PIPE_WIDTH = 60;
 const SPACE = 120;
 const MIN_HEIGHT = 40;
 const MAX_HEIGHT = 460;
-const FPS = 60;
-const NEW_PIPE_TIME = 4; //Seconds
+const FPS = 120;
+const NEW_PIPE_TIME = 3; //Seconds
 
 class Bird {
   constructor(ctx) {
     this.ctx = ctx;
-    this.x = 50;
+    this.x = 150;
     this.y = 150;
+    this.gravity = 0;
+    this.velocity = 0.1;
   }
 
   draw = () => {
-    this.ctx.fillStyle = '#555';
+    this.ctx.fillStyle = 'red';
     this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, 50, 0, 2 * Math.PI);
+    this.ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
     this.ctx.fill();
   }
 
   update = () => {
+    this.gravity += this.velocity;
+    this.gravity = Math.min(4,this.gravity);
+    this.y += this.gravity;
+  }
 
+  jump = () =>{
+    this.gravity = -3.5;
   }
 
 
@@ -65,10 +73,21 @@ class App extends Component {
   }
 
   componentDidMount = () => {
+    document.addEventListener('keydown', this.onKeyDown);
     this.ctx = this.canvasRef.current.getContext("2d");
     this.birds.push(new Bird(this.ctx));
     
     setInterval(this.GameLoop, 1000 / FPS);
+  }
+
+  onKeyDown = (e) =>{
+    
+    if(e.code === "Space")
+    {
+      this.birds.forEach(bird =>{
+        bird.jump();
+      });
+    }
   }
 
   GameLoop = () => {
@@ -81,11 +100,13 @@ class App extends Component {
       this.pipes.push(pipe2);
     }
     
+    //update pipe positions
     this.pipes.forEach(pipe => {
       pipe.update();
       pipe.draw();
     });
 
+    //update bird positions
     this.birds.forEach(bird => {
       bird.update();
       bird.draw();
