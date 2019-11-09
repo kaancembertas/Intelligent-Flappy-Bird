@@ -8,6 +8,7 @@ const SPACE = 80;
 const MIN_HEIGHT = 40;
 const MAX_HEIGHT = 460;
 const FPS = 60;
+const NEW_PIPE_TIME = 3; //Seconds
 
 class Pipe {
   constructor(ctx, firstHeight) {
@@ -47,7 +48,7 @@ class App extends Component {
   GameLoop = () => {
     this.frameCount++;
     this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    if(this.frameCount % 100 === 0)
+    if(this.frameCount % (FPS*NEW_PIPE_TIME) === 0)
     {
       let pipe1 = new Pipe(this.ctx, null);
       let pipe2 = new Pipe(this.ctx, pipe1.height);
