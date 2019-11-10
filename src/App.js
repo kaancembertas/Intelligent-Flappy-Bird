@@ -70,7 +70,9 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.canvasRef = React.createRef();
-    this.frameCount = 0;
+    this.state = {
+      frameCount: 0
+    }
     this.pipes = [];
     this.birds = [];
   }
@@ -93,34 +95,36 @@ class App extends Component {
   }
 
   GameLoop = () => {
-    this.frameCount++;
-    this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    if (this.frameCount % (FPS * NEW_PIPE_TIME) === 0) {
-      let pipe1 = new Pipe(this.ctx, null);
-      let pipe2 = new Pipe(this.ctx, pipe1.height);
-      this.pipes.push(pipe1);
-      this.pipes.push(pipe2);
-    }
-
-    //update pipe positions
-    this.pipes.forEach(pipe => {
-      pipe.update();
-      pipe.draw();
+    this.setState({frameCount: this.state.frameCount+1},()=>{
+      this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      if (this.state.frameCount % (FPS * NEW_PIPE_TIME) === 0) {
+        let pipe1 = new Pipe(this.ctx, null);
+        let pipe2 = new Pipe(this.ctx, pipe1.height);
+        this.pipes.push(pipe1);
+        this.pipes.push(pipe2);
+      }
+  
+      //update pipe positions
+      this.pipes.forEach(pipe => {
+        pipe.update();
+        pipe.draw();
+      });
+      this.pipes = this.pipes.filter(pipe => !pipe.isDead);
+  
+      //update bird positions
+      this.birds.forEach(bird => {
+        bird.update();
+        bird.draw();
+      });
+  
+      if(
+        this.isGameOver())
+      {
+        clearInterval(this.loop);
+        alert("Game Over");
+      }
     });
-    this.pipes = this.pipes.filter(pipe => !pipe.isDead);
-
-    //update bird positions
-    this.birds.forEach(bird => {
-      bird.update();
-      bird.draw();
-    });
-
-    if(
-      this.isGameOver())
-    {
-      clearInterval(this.loop);
-      alert("Game Over");
-    }
+    
   }
 
   isGameOver = () => {
@@ -151,8 +155,10 @@ class App extends Component {
           width={WIDTH}
           height={HEIGHT}
           style={{ marginTop: '10px', border: '1px solid #c3c3c3' }}>
-
         </canvas>
+        <div>
+          {this.state.frameCount}
+        </div>
       </div>
     );
   }
