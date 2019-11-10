@@ -13,7 +13,7 @@ const NEW_PIPE_TIME = 3; //Seconds
 const TOTAL_BIRDS = 100;
 
 class Bird {
-  constructor(ctx) {
+  constructor(ctx,brain) {
     this.ctx = ctx;
     this.x = 150;
     this.y = 150;
@@ -27,7 +27,7 @@ class Bird {
     //[bird.x, bird.y]
     //[closestPipe.x,closestPipe.y]
     //[closestPipe.x, closestPipe.y + closestPipe.height]
-    this.brain = new NeuralNetwork(2, 5, 1);
+    this.brain = brain ? brain.copy() : new NeuralNetwork(2, 5, 1);
   }
 
   draw = () => {
@@ -72,6 +72,16 @@ class Bird {
     }
   }
 
+  mutate = () => {
+    this.brain.mutate((x) => {
+      if (Math.random() < 0.1) {
+        const offset = Math.random();
+        return x + offset;
+      }
+      return x;
+    });
+  }
+
 
 }
 
@@ -112,13 +122,22 @@ class App extends Component {
     this.pipes = [];
     this.birds = [];
     this.deadBirds = [];
+   
   }
 
   componentDidMount = () => {
     //document.addEventListener('keydown', this.onKeyDown);
     this.ctx = this.canvasRef.current.getContext("2d");
-    
-    for(let i = 0;i<TOTAL_BIRDS;i++) this.birds.push(new Bird(this.ctx)); 
+    this.startGame();
+  }
+
+  startGame = (birdBrain) => {
+    this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    this.setState({frameCount:0});
+    if(this.loop) clearInterval(this.loop);
+    this.birds = this.generateBirds(birdBrain);
+    this.pipes = [];
+    this.generatePipe();
 
     this.loop = setInterval(this.GameLoop, 1000 / FPS);
   }
@@ -132,14 +151,27 @@ class App extends Component {
     }
   }
 
+  generateBirds = (brain) =>{
+    const birds = [];
+    for(let i = 0;i<TOTAL_BIRDS;i++) birds.push(new Bird(this.ctx,brain)); 
+    return birds;
+  }
+
+  generatePipe = () =>
+  {
+    let pipe1 = new Pipe(this.ctx, null);
+    let pipe2 = new Pipe(this.ctx, pipe1.height);
+    this.pipes.push(pipe1);
+    this.pipes.push(pipe2);
+  }
+
+  
+
   GameLoop = () => {
     this.setState({ frameCount: this.state.frameCount + 1 }, () => {
       this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (this.state.frameCount % (FPS * NEW_PIPE_TIME) === 0) {
-        let pipe1 = new Pipe(this.ctx, null);
-        let pipe2 = new Pipe(this.ctx, pipe1.height);
-        this.pipes.push(pipe1);
-        this.pipes.push(pipe2);
+        this.generatePipe();
       }
 
       //update pipe positions
@@ -161,7 +193,7 @@ class App extends Component {
       this.updateBirdDeadState();
       this.deadBirds.push(...this.birds.filter(bird => bird.isDead));
       this.birds = this.birds.filter(bird => !bird.isDead);
-
+      console.log(this.birds.length);
       if(this.birds.length===0)
       {
         let totalAge = 0;
@@ -169,8 +201,17 @@ class App extends Component {
         this.deadBirds.forEach(deadBird => totalAge+=deadBird.age);
 
         //Calculate fitness raio
-        this.deadBirds.forEach(bird => totalAge+=bird.age);
+        this.deadBirds.forEach(deadBird => deadBird.fitness=deadBird.age/totalAge);
+        this.deadBirds.sort((a,b)=>a.fitness>=b.fitness);
         
+       
+        
+        //TODO
+        const strongest = this.deadBirds[TOTAL_BIRDS-1];
+        //console.log(strongest);
+        strongest.mutate();
+        this.startGame(strongest.brain);
+
       }
 
     });
