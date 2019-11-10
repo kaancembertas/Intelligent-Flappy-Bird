@@ -46,9 +46,11 @@ class Pipe {
     this.y = firstHeight ? firstHeight + SPACE : 0;
     this.isDead = false;
     this.width = PIPE_WIDTH;
+    
 
     this.height = firstHeight ? HEIGHT - firstHeight - SPACE : Math.random() * (MAX_HEIGHT - SPACE);
-    if (this.height < MIN_HEIGHT) firstHeight = MIN_HEIGHT;
+   
+    if (this.height < MIN_HEIGHT) this.height = MIN_HEIGHT;
   }
 
   update = () => {
@@ -113,7 +115,8 @@ class App extends Component {
       bird.draw();
     });
 
-    if(this.isGameOver())
+    if(
+      this.isGameOver())
     {
       clearInterval(this.loop);
       alert("Game Over");
