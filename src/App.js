@@ -28,11 +28,11 @@ class Bird {
 
   update = () => {
     this.gravity += this.velocity;
-    this.gravity = Math.min(4,this.gravity);
+    this.gravity = Math.min(4, this.gravity);
     this.y += this.gravity;
   }
 
-  jump = () =>{
+  jump = () => {
     this.gravity = -3.5;
   }
 
@@ -45,6 +45,7 @@ class Pipe {
     this.x = WIDTH;
     this.y = firstHeight ? firstHeight + SPACE : 0;
     this.isDead = false;
+    this.width = PIPE_WIDTH;
 
     this.height = firstHeight ? HEIGHT - firstHeight - SPACE : Math.random() * (MAX_HEIGHT - SPACE);
     if (this.height < MIN_HEIGHT) firstHeight = MIN_HEIGHT;
@@ -69,22 +70,21 @@ class App extends Component {
     this.canvasRef = React.createRef();
     this.frameCount = 0;
     this.pipes = [];
-    this.birds = []
+    this.birds = [];
   }
 
   componentDidMount = () => {
     document.addEventListener('keydown', this.onKeyDown);
     this.ctx = this.canvasRef.current.getContext("2d");
     this.birds.push(new Bird(this.ctx));
-    
-    setInterval(this.GameLoop, 1000 / FPS);
+
+    this.loop = setInterval(this.GameLoop, 1000 / FPS);
   }
 
-  onKeyDown = (e) =>{
-    
-    if(e.code === "Space")
-    {
-      this.birds.forEach(bird =>{
+  onKeyDown = (e) => {
+
+    if (e.code === "Space") {
+      this.birds.forEach(bird => {
         bird.jump();
       });
     }
@@ -99,12 +99,13 @@ class App extends Component {
       this.pipes.push(pipe1);
       this.pipes.push(pipe2);
     }
-    
+
     //update pipe positions
     this.pipes.forEach(pipe => {
       pipe.update();
       pipe.draw();
     });
+    this.pipes = this.pipes.filter(pipe => !pipe.isDead);
 
     //update bird positions
     this.birds.forEach(bird => {
@@ -112,7 +113,30 @@ class App extends Component {
       bird.draw();
     });
 
-    this.pipes = this.pipes.filter(pipe => !pipe.isDead);
+    if(this.isGameOver())
+    {
+      clearInterval(this.loop);
+      alert("Game Over");
+    }
+  }
+
+  isGameOver = () => {
+    let gameOver = false;
+    this.birds.forEach(bird => {
+      if(bird.y<0 || bird.y>HEIGHT) gameOver = true;
+      this.pipes.forEach(pipe => {
+ 
+        //const pipeBottomRight = { x: pipe.x + pipe.width, y: pipe.y + pipe.height };
+
+        if (bird.x > pipe.x && bird.x < pipe.x+pipe.width &&
+          bird.y > pipe.y && bird.y < pipe.y+pipe.height) {
+          gameOver = true;
+        }
+        
+      });
+    });
+
+    return gameOver;
   }
 
   render() {
