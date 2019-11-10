@@ -54,7 +54,7 @@ class Bird {
     this.gravity = -3.5;
   }
 
-  think = () => {
+  think = (topPipe,BottomPipe) => {
     //input
     //[bird.x, bird.y]
     //[closestPipe.x,closestPipe.y]
@@ -62,7 +62,11 @@ class Bird {
 
     const inputs = [
       this.x/WIDTH,
-      this.y/HEIGHT
+      this.y/HEIGHT,
+      topPipe.x,
+      topPipe.y,
+      topPipe.x+this.width//??
+      
     ];
     //range 0,1
     const output = this.brain.predict(inputs);
