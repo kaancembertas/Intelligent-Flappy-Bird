@@ -1,5 +1,5 @@
 # Intelligent Flappy Bird
-[Flappy.gif](Flappy.gif)
+![Flappy Bird](Flappy.gif)
 
 
 ## Available Scripts
