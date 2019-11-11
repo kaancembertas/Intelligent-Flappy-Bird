@@ -27,7 +27,7 @@ class Bird {
     //[bird.x, bird.y]
     //[closestPipe.x,closestPipe.y]
     //[closestPipe.x, closestPipe.y + closestPipe.height]
-    this.brain = brain ? brain.copy() : new NeuralNetwork(2, 5, 1);
+    this.brain = brain ? brain.copy() : new NeuralNetwork(5, 10, 1);
   }
 
   draw = () => {
@@ -37,16 +37,15 @@ class Bird {
     this.ctx.fill();
   }
 
-  update = () => {
+  update = (pipeX,spaceStartY,spaceEndY) => {
     this.age+=1;
     this.gravity += this.velocity;
     this.gravity = Math.min(4, this.gravity);
     this.y += this.gravity;
     
-    if(this.y>HEIGHT) this.y = HEIGHT;
-    else if(this.y<0) this.y = 0;
-    this.think();
-
+   
+    this.think(pipeX,spaceStartY,spaceEndY);
+    this.draw();
    
   }
 
@@ -54,19 +53,19 @@ class Bird {
     this.gravity = -3.5;
   }
 
-  think = (topPipe,BottomPipe) => {
+  think = (pipeX,spaceStartY,spaceEndY) => {
     //input
     //[bird.x, bird.y]
     //[closestPipe.x,closestPipe.y]
     //[closestPipe.x, closestPipe.y + closestPipe.height]
 
     const inputs = [
-      this.x/WIDTH,
+      (pipeX-this.x)/WIDTH,
       this.y/HEIGHT,
-      topPipe.x,
-      topPipe.y,
-      topPipe.x+this.width//??
-      
+      spaceStartY/HEIGHT,
+      spaceEndY/HEIGHT,
+      this.gravity/10
+            
     ];
     //range 0,1
     const output = this.brain.predict(inputs);
@@ -78,7 +77,7 @@ class Bird {
 
   mutate = () => {
     this.brain.mutate((x) => {
-      if (Math.random() < 0.1) {
+      if (Math.random() < 0.3) {
         const offset = Math.random();
         return x + offset;
       }
@@ -107,6 +106,7 @@ class Pipe {
     this.x = this.x - 1;
     if ((this.x + PIPE_WIDTH) < 0)
       this.isDead = true;
+    this.draw();
   }
 
   draw = () => {
@@ -169,6 +169,16 @@ class App extends Component {
     this.pipes.push(pipe2);
   }
 
+  getNextPipe = (bird) =>{
+    for(let i=0;i<this.pipes.length;i++)
+    {
+      if(this.pipes[i].x > bird.x)
+      {
+        return this.pipes[i];
+      }
+    }
+  }
+
   
 
   GameLoop = () => {
@@ -179,15 +189,14 @@ class App extends Component {
       }
 
       //update pipe positions
-      this.pipes.forEach(pipe => {
-        pipe.update();
-        pipe.draw();
-      });      
+      this.pipes.forEach(pipe => pipe.update());      
 
       //update bird positions
+     
       this.birds.forEach(bird => {
-        bird.update();
-        bird.draw();
+        const nextPipe = this.getNextPipe(bird);
+        const pipeY = nextPipe.y+nextPipe.height;
+        bird.update(nextPipe.x,pipeY,pipeY+SPACE);
       });
 
       //delete off-screen pipes
@@ -197,7 +206,7 @@ class App extends Component {
       this.updateBirdDeadState();
       this.deadBirds.push(...this.birds.filter(bird => bird.isDead));
       this.birds = this.birds.filter(bird => !bird.isDead);
-      console.log(this.birds.length);
+      //console.log(this.birds.length);
       if(this.birds.length===0)
       {
         let totalAge = 0;
@@ -211,8 +220,8 @@ class App extends Component {
        
         
         //TODO
-        const strongest = this.deadBirds[TOTAL_BIRDS-1];
-        //console.log(strongest);
+        const strongest = this.deadBirds[0];
+
         strongest.mutate();
         this.startGame(strongest.brain);
 
@@ -228,7 +237,7 @@ class App extends Component {
       if (bird.y < 0 || bird.y > HEIGHT) bird.isDead = true;
       this.pipes.forEach(pipe => {
 
-        //const pipeBottomRight = { x: pipe.x + pipe.width, y: pipe.y + pipe.height };
+        
 
         if (bird.x >= pipe.x && bird.x <= pipe.x + pipe.width &&
           bird.y >= pipe.y && bird.y <= pipe.y + pipe.height) {
