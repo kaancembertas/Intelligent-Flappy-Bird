@@ -10,7 +10,8 @@ const MIN_HEIGHT = 40;
 const MAX_HEIGHT = 460;
 const FPS = 120;
 const NEW_PIPE_TIME = 3; //Seconds
-const TOTAL_BIRDS = 100;
+const TOTAL_BIRDS = 2000;
+const GAME_SPEED = 1;
 
 class Bird {
   constructor(ctx,brain) {
@@ -27,7 +28,15 @@ class Bird {
     //[bird.x, bird.y]
     //[closestPipe.x,closestPipe.y]
     //[closestPipe.x, closestPipe.y + closestPipe.height]
-    this.brain = brain ? brain.copy() : new NeuralNetwork(5, 10, 1);
+    if(brain)
+    {
+      this.brain = brain.copy();
+      this.mutate();
+    }
+    else
+    {
+       this.brain = new NeuralNetwork(6,10,2);
+    }
   }
 
   draw = () => {
@@ -61,10 +70,12 @@ class Bird {
 
     const inputs = [
       (pipeX-this.x)/WIDTH,
+      (pipeX-this.x+SPACE)/WIDTH,
       this.y/HEIGHT,
       spaceStartY/HEIGHT,
       spaceEndY/HEIGHT,
-      this.gravity/10
+      this.gravity/4
+
             
     ];
     //range 0,1
@@ -77,8 +88,8 @@ class Bird {
 
   mutate = () => {
     this.brain.mutate((x) => {
-      if (Math.random() < 0.3) {
-        const offset = Math.random();
+      if (Math.random() < 0.1) {
+        const offset = Math.random()*0.5;
         return x + offset;
       }
       return x;
@@ -135,15 +146,17 @@ class App extends Component {
     this.startGame();
   }
 
-  startGame = (birdBrain) => {
+  startGame = () => {
     this.ctx.clearRect(0, 0, WIDTH, HEIGHT);
     this.setState({frameCount:0});
     if(this.loop) clearInterval(this.loop);
-    this.birds = this.generateBirds(birdBrain);
+    
+    this.birds = this.generateBirds();
+    this.deadBirds = [];
     this.pipes = [];
     this.generatePipe();
 
-    this.loop = setInterval(this.GameLoop, 1000 / FPS);
+    this.loop = setInterval(this.GameLoop, 1000 / (FPS*GAME_SPEED));
   }
 
   onKeyDown = (e) => {
@@ -155,9 +168,13 @@ class App extends Component {
     }
   }
 
-  generateBirds = (brain) =>{
+  generateBirds = () =>{
     const birds = [];
-    for(let i = 0;i<TOTAL_BIRDS;i++) birds.push(new Bird(this.ctx,brain)); 
+    for(let i = 0;i<TOTAL_BIRDS;i++) {
+    const brain = this.deadBirds.length ? this.pickOne().brain : null;
+    const newBird = new Bird(this.ctx, brain); 
+    birds.push(newBird);
+    }
     return birds;
   }
 
@@ -214,21 +231,28 @@ class App extends Component {
         this.deadBirds.forEach(deadBird => totalAge+=deadBird.age);
 
         //Calculate fitness raio
-        this.deadBirds.forEach(deadBird => deadBird.fitness=deadBird.age/totalAge);
-        this.deadBirds.sort((a,b)=>a.fitness>=b.fitness);
-        
+        this.deadBirds.forEach(deadBird => deadBird.fitness=deadBird.age/totalAge);       
        
         
         //TODO
-        const strongest = this.deadBirds[0];
 
-        strongest.mutate();
-        this.startGame(strongest.brain);
+        this.startGame();
 
       }
 
     });
 
+  }
+
+  pickOne = () => {
+    let index = 0;
+    let r = Math.random();
+    while (r > 0) {
+      r -= this.deadBirds[index].fitness;
+      index += 1;
+    }
+    index -= 1;
+    return this.deadBirds[index];
   }
 
   updateBirdDeadState = () => {
