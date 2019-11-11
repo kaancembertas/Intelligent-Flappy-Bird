@@ -1,10 +1,8 @@
 # Intelligent Flappy Bird
-<p align="center">
-  <img src="./Flappy.gif">
-</p>
+[Flappy.gif](Flappy.gif)
+
 
 ## Available Scripts
-
 In the project directory, you can run:
 
 ### `yarn start`
