@@ -5,11 +5,11 @@ import {Bird,Pipe} from './models';
 
 const WIDTH = 800;
 const HEIGHT = 500;
-const SPACE = 120;
+const SPACE = 80;
 
 const FPS = 120;
 const NEW_PIPE_TIME = 3; //Seconds
-const TOTAL_BIRDS = 500;
+const TOTAL_BIRDS = 250;
 
 class App extends Component {
 
