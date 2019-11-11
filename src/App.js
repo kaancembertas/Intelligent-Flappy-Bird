@@ -1,127 +1,15 @@
 import React, { Component } from 'react';
 import './App.css';
-import { NeuralNetwork } from './lib/nn';
+import {Bird,Pipe} from './models';
+
 
 const WIDTH = 800;
 const HEIGHT = 500;
-const PIPE_WIDTH = 100;
 const SPACE = 120;
-const MIN_HEIGHT = 40;
-const MAX_HEIGHT = 460;
+
 const FPS = 120;
 const NEW_PIPE_TIME = 3; //Seconds
 const TOTAL_BIRDS = 500;
-const GAME_SPEED = 1;
-
-class Bird {
-  constructor(ctx, brain) {
-    this.ctx = ctx;
-    this.x = 150;
-    this.y = 150;
-    this.gravity = 0;
-    this.velocity = 0.1;
-    this.isDead = false;
-    this.age = 0;
-    this.fitness = 0;
-
-    //input
-    //[bird.x, bird.y]
-    //[closestPipe.x,closestPipe.y]
-    //[closestPipe.x, closestPipe.y + closestPipe.height]
-    if (brain) {
-      this.brain = brain.copy();
-      this.mutate();
-    }
-    else {
-      this.brain = new NeuralNetwork(5, 10, 2);
-    }
-  }
-
-  draw = () => {
-    this.ctx.fillStyle = 'red';
-    this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
-    this.ctx.fill();
-  }
-
-  update = (pipeX, spaceStartY, spaceEndY) => {
-    this.age += 1;
-    this.gravity += this.velocity;
-    this.gravity = Math.min(4, this.gravity);
-    this.y += this.gravity;
-
-
-    this.think(pipeX, spaceStartY, spaceEndY);
-    this.draw();
-
-  }
-
-  jump = () => {
-    this.gravity = -3.5;
-  }
-
-  think = (pipeX, spaceStartY, spaceEndY) => {
-    //input
-    //[bird.x, bird.y]
-    //[closestPipe.x,closestPipe.y]
-    //[closestPipe.x, closestPipe.y + closestPipe.height]
-
-    const inputs = [
-      (pipeX - this.x) / WIDTH,
-      (pipeX - this.x + SPACE) / WIDTH,
-      (this.y - spaceStartY) / HEIGHT,
-      (spaceEndY - this.y) / HEIGHT,
-      this.gravity / 4
-
-
-    ];
-    //range 0,1
-    const output = this.brain.predict(inputs);
-
-    if (output[0] < 0.5) {
-      this.jump();
-    }
-  }
-
-  mutate = () => {
-    this.brain.mutate((x) => {
-      if (Math.random() < 0.1) {
-        const offset = Math.random() * 0.5;
-        return x + offset;
-      }
-      return x;
-    });
-  }
-
-
-}
-
-class Pipe {
-  constructor(ctx, firstHeight) {
-    this.ctx = ctx;
-    this.x = WIDTH;
-    this.y = firstHeight ? firstHeight + SPACE : 0;
-    this.isDead = false;
-    this.width = PIPE_WIDTH;
-
-
-    this.height = firstHeight ? HEIGHT - firstHeight - SPACE : Math.random() * (MAX_HEIGHT - SPACE);
-
-    if (this.height < MIN_HEIGHT) this.height = MIN_HEIGHT;
-  }
-
-  update = () => {
-    this.x = this.x - 1;
-    if ((this.x + PIPE_WIDTH) < 0)
-      this.isDead = true;
-    this.draw();
-  }
-
-  draw = () => {
-    this.ctx.fillStyle = '#000';
-    this.ctx.fillRect(this.x, this.y, PIPE_WIDTH, this.height);
-  }
-}
 
 class App extends Component {
 
@@ -156,7 +44,7 @@ class App extends Component {
     this.pipes = [];
     this.generatePipe();
 
-    this.loop = setInterval(this.GameLoop, 1000 / (FPS * GAME_SPEED));
+    this.loop = setInterval(this.GameLoop, 1000 / (FPS));
   }
 
   onKeyDown = (e) => {
@@ -172,15 +60,15 @@ class App extends Component {
     const birds = [];
     for (let i = 0; i < TOTAL_BIRDS; i++) {
       const brain = this.deadBirds.length ? this.pickOne().brain : null;
-      const newBird = new Bird(this.ctx, brain);
+      const newBird = new Bird(this.ctx, brain,SPACE,WIDTH,HEIGHT);
       birds.push(newBird);
     }
     return birds;
   }
 
   generatePipe = () => {
-    let pipe1 = new Pipe(this.ctx, null);
-    let pipe2 = new Pipe(this.ctx, pipe1.height);
+    let pipe1 = new Pipe(this.ctx, null,WIDTH,HEIGHT,SPACE);
+    let pipe2 = new Pipe(this.ctx, pipe1.height,WIDTH,HEIGHT,SPACE);
     this.pipes.push(pipe1);
     this.pipes.push(pipe2);
   }
