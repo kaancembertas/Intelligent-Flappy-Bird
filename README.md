@@ -1,5 +1,7 @@
 # Intelligent Flappy Bird
-
+<p align="center">
+  <img src="./Flappy.gif">
+</p>
 
 ## Available Scripts
 
